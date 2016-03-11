@@ -44,6 +44,11 @@ In snappy-commons/build-artifacts/scala-2.10/snappy/conf, create a file named se
 localhost -dir='/tmp/server1' -locators='localhost:10334' -heap-size=4096m -classpath='PATH_TO_GIT_CHECKOUT/ad_impression_log_aggregator/build/libs/LogAggregator-1.0-SNAPSHOT.jar'
 localhost -dir='/tmp/server2' -locators='localhost:10334' -heap-size=4096m -classpath='PATH_TO_GIT_CHECKOUT/ad_impression_log_aggregator/build/libs/LogAggregator-1.0-SNAPSHOT.jar'
 ```
+and run following command 
+```
+snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-servers.sh start
+
+```
 
 Start aggregation
 ```
