@@ -1,13 +1,11 @@
-// scalastyle:ignore
-
 package io.snappydata.aggr
 
 import java.util.Properties
 
-import scala.util.Random
-
 import io.snappydata.aggr.Constants._
 import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
+
+import scala.util.Random
 
 object RandomLogKafkaProducer extends App {
 
@@ -19,7 +17,7 @@ object RandomLogKafkaProducer extends App {
   val config = new ProducerConfig(props)
   val producer = new Producer[String, ImpressionLog](config)
 
-  println("Sending messages...") // scalastyle:ignore
+  println("Sending messages...")
   val random = new Random()
   var i = 0
   // infinite loop
@@ -43,7 +41,7 @@ object RandomLogKafkaProducer extends App {
     producer.send(new KeyedMessage[String, ImpressionLog](Constants.KafkaTopic, log))
     i = i + 1
     if (i % 10000 == 0) {
-      println(s"Sent $i messages!") // scalastyle:ignore
+      println(s"Sent $i messages!")
     }
   }
 }

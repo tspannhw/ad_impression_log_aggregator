@@ -1,58 +1,51 @@
-// scalastyle:ignore
-
 package io.snappydata.aggr
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.streaming.{SnappyStreamingContext, StreamToRowsConverter}
+import org.apache.spark.sql.streaming.SnappyStreamingContext
 import org.apache.spark.sql.{SaveMode, SnappyContext}
 import org.apache.spark.streaming.Milliseconds
-import org.apache.spark.unsafe.types.UTF8String
 
 object LogAggregator extends App {
 
   val sparkConf = new org.apache.spark.SparkConf()
-      .setAppName("logAggregator")
-      // .setMaster("local[2]")
-      .setMaster("snappydata://localhost:10334")
+    .setAppName("logAggregator")
+    .setMaster("snappydata://localhost:10334")
 
   val sc = new SparkContext(sparkConf)
-  val ssnc = SnappyStreamingContext(SnappyContext.getOrCreate(sc), Milliseconds(10000))
+  val snsc = SnappyStreamingContext(SnappyContext.getOrCreate(sc), Milliseconds(10000))
 
-  ssnc.sql("drop table if exists impressionlog")
-  ssnc.sql("drop table if exists snappyStoreTable")
+  snsc.sql("drop table if exists impressionlog")
+  snsc.sql("drop table if exists snappyStoreTable")
 
-  ssnc.sql("create stream table impressionlog (timestamp long, publisher string," +
-      " advertiser string, " +
-      "website string, geo string, bid double, cookie string) " +
-      "using directkafka_stream options " +
-      "(storagelevel 'MEMORY_AND_DISK_SER_2', " +
-      "rowConverter 'io.snappydata.aggr.KafkaStreamToRowsConverter' ," +
-      " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
-      " topics 'adnetwork-topic'," +
-      " K 'java.lang.String'," +
-      " V 'org.apache.spark.sql.streaming.ImpressionLog', " +
-      " KD 'kafka.serializer.StringDecoder', " +
-      " VD 'io.snappydata.aggr.ImpressionLogAvroDecoder')")
+  snsc.sql("create stream table impressionlog (timestamp long, publisher string," +
+    " advertiser string, " +
+    "website string, geo string, bid double, cookie string) " +
+    "using directkafka_stream options " +
+    "(storagelevel 'MEMORY_AND_DISK_SER_2', " +
+    "rowConverter 'io.snappydata.aggr.KafkaStreamToRowsConverter' ," +
+    " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
+    " topics 'adnetwork-topic'," +
+    " K 'java.lang.String'," +
+    " V 'io.snappydata.aggr.ImpressionLog', " +
+    " KD 'kafka.serializer.StringDecoder', " +
+    " VD 'io.snappydata.aggr.ImpressionLogAvroDecoder')")
 
-  ssnc.sql("create table snappyStoreTable(timestamp long, publisher string," +
-      " geo string, avg_bid double) " +
-      "using column " +
-      "options(PARTITION_BY 'timestamp')")
+  snsc.sql("create table snappyStoreTable(publisher string," +
+    " geo string, avg_bid double, imps long, uniques long) " +
+    "using column " +
+    "options(PARTITION_BY 'publisher')")
 
-  ssnc.registerCQ("select timestamp, publisher, geo, avg(bid) as avg_bid" +
-      " from impressionlog window (duration '10' seconds, slide '10' seconds)" +
-      " where geo != 'unknown' group by publisher, geo, timestamp")
-      .foreachDataFrame(df => {
-        df.show
-        df.write.format("column").mode(SaveMode.Append)
-            .options(Map.empty[String, String]).saveAsTable("snappyStoreTable")
-      })
-  ssnc.sql("STREAMING START")
-  ssnc.awaitTerminationOrTimeout(1800 * 1000)
-  ssnc.sql("select count(*) from snappyStoreTable").show()
-  ssnc.sql("STREAMING STOP")
+  snsc.registerCQ("select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques" +
+    " from impressionlog window (duration '10' seconds, slide '10' seconds)" +
+    " where geo != 'unknown' group by publisher, geo")
+    .foreachDataFrame(df => {
+      df.show
+      df.write.format("column").mode(SaveMode.Append)
+        .options(Map.empty[String, String]).saveAsTable("snappyStoreTable")
+    })
+  snsc.sql("STREAMING START")
+  snsc.awaitTerminationOrTimeout(1800 * 1000)
+  snsc.sql("select count(*) from snappyStoreTable").show()
+  snsc.sql("STREAMING STOP")
   Thread.sleep(20000)
-
 }
-

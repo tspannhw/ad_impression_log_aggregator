@@ -2,14 +2,27 @@ plugins {
     id "com.commercehub.gradle.plugin.avro" version "0.5.0"
 }
 
+sourceCompatibility = 1.7
+
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'scala'
 apply plugin: "com.commercehub.gradle.plugin.avro"
+apply plugin: 'maven'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+archivesBaseName = 'LogAggregator'
+version = '1.0-SNAPSHOT'
 
 repositories {
-  mavenCentral()
   mavenLocal()
+  mavenCentral()
   maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
   maven { url "https://plugins.gradle.org/m2/" }
   maven { url 'https://clojars.org/repo' }
@@ -17,12 +30,12 @@ repositories {
 }
 
 dependencies {
-  compile 'io.snappydata:snappy-tools_2.10:0.1.0-SNAPSHOT'
-  compile 'io.snappydata:snappy-core_2.10:0.1.0-SNAPSHOT'
+  provided 'io.snappydata:snappy-tools_2.10:0.1.0-SNAPSHOT'
+  provided 'io.snappydata:snappy-core_2.10:0.1.0-SNAPSHOT'
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
-  compile 'org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde'
-  compile 'org.slf4j:slf4j-api:1.7.5'
-  compile "org.scala-lang:scala-library:2.10.1"
+  provided 'org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde'
+  provided 'org.slf4j:slf4j-api:1.7.5'
+  provided "org.scala-lang:scala-library:2.10.1"
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
@@ -45,7 +58,19 @@ task logaggregator(type: JavaExec, dependsOn: classes) {
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']
-//    systemProperties['XX:MaxPermSize'] = '512m'
+}
+
+jar {
+    dependsOn configurations.runtime
+    from {
+        (configurations.runtime - configurations.provided).collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    } {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
 }
 
 

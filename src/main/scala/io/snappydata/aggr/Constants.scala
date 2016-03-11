@@ -1,4 +1,3 @@
-// scalastyle:ignore
 package io.snappydata.aggr
 
 object Constants {

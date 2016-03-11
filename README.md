@@ -22,18 +22,29 @@ Create a topic “adnetwork-topic”:
 ```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 8 --topic adnetwork-topic
 ```
-Start SnappyData cluster: 
-```
-snappy-commons/build-artifacts/scala-2.10/snappy $ ./sbin/snappy-start-all.sh
-```
-Please note that you need to comment out following line in snappy-start-all.sh
-```
-#"$sbin"/snappy-leads.sh start
-```
+
 Start generating and publishing logs to Kafka
 ```
 ./gradlew loggenerator
 ```
+
+Start SnappyData Locator:
+In snappy-commons/build-artifacts/scala-2.10/snappy/conf, create a file named locators and add following line : 
+```
+localhost -peer-discovery-port=10334 -dir=/tmp/locator -heap-size=1024m 
+```
+and run following command 
+```
+snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-locators.sh start
+```
+
+Start SnappyData Servers:  
+In snappy-commons/build-artifacts/scala-2.10/snappy/conf, create a file named servers and add following two lines to create two servers: 
+```
+localhost -dir='/tmp/server1' -locators='localhost:10334' -heap-size=4096m -classpath='PATH_TO_GIT_CHECKOUT/ad_impression_log_aggregator/build/libs/LogAggregator-1.0-SNAPSHOT.jar'
+localhost -dir='/tmp/server2' -locators='localhost:10334' -heap-size=4096m -classpath='PATH_TO_GIT_CHECKOUT/ad_impression_log_aggregator/build/libs/LogAggregator-1.0-SNAPSHOT.jar'
+```
+
 Start aggregation
 ```
 ./gradlew logaggregator
