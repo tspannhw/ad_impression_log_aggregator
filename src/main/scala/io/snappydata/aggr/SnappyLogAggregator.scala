@@ -5,7 +5,7 @@ import org.apache.spark.sql.streaming.SnappyStreamingContext
 import org.apache.spark.sql.{SaveMode, SnappyContext}
 import org.apache.spark.streaming.Milliseconds
 
-object LogAggregator extends App {
+object SnappyLogAggregator extends App {
 
   val sparkConf = new org.apache.spark.SparkConf()
     .setAppName("logAggregator")

@@ -25,7 +25,7 @@ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 -
 
 Start generating and publishing logs to Kafka
 ```
-./gradlew loggenerator
+./gradlew gen
 ```
 
 Start SnappyData Locator:
@@ -52,5 +52,5 @@ snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-servers.sh star
 
 Start aggregation
 ```
-./gradlew logaggregator
+./gradlew aggr
 ```
